@@ -88,7 +88,7 @@ if IS_POSTGRESQL:
             'NAME': "front",
             'USER': "postgres",
             'PASSWORD': "12345",
-            'HOST': "config-db",
+            'HOST': "front_db",
             'PORT': "5432",
         }
     }
