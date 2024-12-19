@@ -27,8 +27,30 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         ordering = ['id']
-        verbose_name = _('объект "Пользователь"')
+        verbose_name = _('Пользователь')
         verbose_name_plural = _('Пользователи')
 
     def __str__(self):
         return self.email
+
+    def get_full_name(self):
+        return f'{self.first_name} {self.last_name}'
+
+
+class UserPaymentCard(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_('Пользователь'))
+    card_number = models.CharField(max_length=16, verbose_name=_('Номер карты'))
+    card_holder_name = models.CharField(max_length=150, verbose_name=_('Имя держателя карты'))
+    expiration_date = models.DateField(verbose_name=_('Срок действия'))
+    cvv = models.CharField(max_length=3, verbose_name=_('CVV код'))
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Создано'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Обновлено'))
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = _('Платежная карта')
+        verbose_name_plural = _('Платежные карты')
+
+    def __str__(self):
+        return self.card_number

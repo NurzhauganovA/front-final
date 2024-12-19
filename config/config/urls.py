@@ -12,6 +12,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     path(f'{api_version}/auth/', include('authenticate.urls')),
+    path(f'{api_version}/courses/', include('courses.urls')),
 ] + yasg
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
