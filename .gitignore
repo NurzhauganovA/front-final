@@ -2,3 +2,6 @@ config/db.sqlite3
 
 config/.idea/
 config/.venv/
+
+config/docker-compose.yml
+config/Dockerfile
