@@ -5,7 +5,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics
 
 from courses.models import Course
-from courses.serializers import CourseSerializer
+from courses.serializers import CourseSerializer, CourseDetailSerializer
 
 
 class CourseListView(generics.ListAPIView):
@@ -19,7 +19,7 @@ class CourseListView(generics.ListAPIView):
 
 
 class CourseDetailView(generics.RetrieveAPIView):
-    serializer_class = CourseSerializer
+    serializer_class = CourseDetailSerializer
 
     def get_object(self):
         return get_object_or_404(Course, pk=self.kwargs.get('pk'))

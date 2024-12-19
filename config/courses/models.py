@@ -51,7 +51,7 @@ class Course(models.Model):
 
 
 class CourseChapter(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс', related_name='chapters')
     title = models.CharField(max_length=150, verbose_name='Название главы')
     description = models.TextField(verbose_name='Описание главы')
 
@@ -72,6 +72,7 @@ class CourseLesson(models.Model):
     title = models.CharField(max_length=150, verbose_name='Название урока')
     description = models.TextField(verbose_name='Описание урока')
     video_url = models.URLField(verbose_name='Ссылка на видео')
+    is_completed = models.BooleanField(default=False, verbose_name='Завершено')
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
@@ -86,7 +87,7 @@ class CourseLesson(models.Model):
 
 
 class CourseReview(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс', related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
     text = models.TextField(verbose_name='Отзыв')
 
