@@ -1,3 +1,4 @@
+from django.contrib import auth
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.authentication import TokenAuthentication
@@ -11,7 +12,7 @@ from rest_framework import generics
 
 from .models import User
 from .serializers import CustomTokenObtainPairSerializer, UserRegisterSerializer, UserCheckResetCodeSerializer, \
-    UserResetPasswordSerializer, UserSerializer, SendResetPasswordCodeSerializer
+    UserResetPasswordSerializer, UserSerializer, SendResetPasswordCodeSerializer, UserUpdateSerializer
 from .utils import *
 
 
@@ -23,7 +24,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         return super().post(request, *args, **kwargs)
 
 
-class UserRegisterView(generics.CreateAPIView):
+class UserRegisterView(generics.GenericAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegisterSerializer
     parser_classes = (MultiPartParser, FormParser)
@@ -41,24 +42,28 @@ class UserRegisterView(generics.CreateAPIView):
         ]
     )
     def post(self, request, *args, **kwargs):
-        send_activation_code('verify_email', request.data.get('email'))
+        serializer = UserRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            send_activation_code('verify_email', request.data.get('email'))
+            return Response({'message': 'Пользователь успешно зарегистрирован'}, status=201)
 
-        return super().post(request, *args, **kwargs)
+        return Response(serializer.errors, status=400)
 
 
 class UserVerifyEmailView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     serializer_class = UserCheckResetCodeSerializer
 
     @swagger_auto_schema(tags=["user settings"])
     def post(self, request, *args, **kwargs):
         code = request.data.get('code')
-        email = request.user.email
+        email = request.data.get('email')
         if check_activation_code('verify_email', email, code):
             user = User.objects.get(email=email)
             user.is_active = True
             user.save()
             return Response({'message': 'Email успешно подтвержден'})
+        return Response({'message': 'Введен неверный код'}, status=403)
 
 
 class UserLogoutView(generics.GenericAPIView):
@@ -67,13 +72,11 @@ class UserLogoutView(generics.GenericAPIView):
 
     @swagger_auto_schema(tags=["user settings"])
     def post(self, request, *args, **kwargs):
-        user = request.user
-        user.auth_token.delete()
-        return Response({'message': 'Пользователь успешно вышел из системы'})
+        auth.logout(request)
+        return Response({'message': 'Вы успешно вышли из системы'})
 
 
 class SendResetPasswordCodeView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     serializer_class = SendResetPasswordCodeSerializer
 
     @swagger_auto_schema(tags=["user settings"])
@@ -84,7 +87,6 @@ class SendResetPasswordCodeView(generics.GenericAPIView):
 
 
 class CheckResetPasswordCodeView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     serializer_class = UserCheckResetCodeSerializer
 
     @swagger_auto_schema(tags=["user settings"])
@@ -97,7 +99,6 @@ class CheckResetPasswordCodeView(generics.GenericAPIView):
 
 
 class ResetPasswordView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     serializer_class = UserResetPasswordSerializer
 
     @swagger_auto_schema(tags=["user settings"])
@@ -126,3 +127,42 @@ class UserListView(generics.ListAPIView):
     @swagger_auto_schema(tags=["user settings"])
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class ProfileInfoView(generics.GenericAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    @swagger_auto_schema(tags=["user settings"])
+    def get(self, request, *args, **kwargs):
+        serializer = UserSerializer(self.get_object())
+        return Response(serializer.data)
+
+
+class ProfileInfoUpdateView(generics.GenericAPIView):
+    serializer_class = UserUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def get_object(self):
+        return self.request.user
+
+    @swagger_auto_schema(
+        tags=["user settings"],
+        manual_parameters=[
+            openapi.Parameter('first_name', openapi.IN_FORM, type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('last_name', openapi.IN_FORM, type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('phone', openapi.IN_FORM, type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('iin', openapi.IN_FORM, type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('id_card_image', openapi.IN_FORM, type=openapi.TYPE_FILE, required=False),
+        ]
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = UserSerializer(self.get_object(), data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=403)

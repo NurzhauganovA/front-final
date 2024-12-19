@@ -29,6 +29,15 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'email', 'first_name', 'last_name', 'phone', 'iin', 'id_card_image')
 
 
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'first_name', 'last_name', 'phone', 'iin', 'id_card_image')
+        extra_kwargs = {
+            'email': {'read_only': True}
+        }
+
+
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
