@@ -136,7 +136,7 @@ class ProfileInfoView(generics.GenericAPIView):
 
     @swagger_auto_schema(tags=["user settings"])
     def get(self, request, *args, **kwargs):
-        serializer = UserSerializer(self.get_object())
+        serializer = UserSerializer(self.get_object(), context={'request': request})
         return Response(serializer.data)
 
 

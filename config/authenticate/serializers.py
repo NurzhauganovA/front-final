@@ -24,9 +24,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    id_card_image = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ('id', 'email', 'first_name', 'last_name', 'phone', 'iin', 'id_card_image', 'is_superuser')
+
+    def get_id_card_image(self, obj):
+        request = self.context.get('request')
+        id_card_image = obj.id_card_image.url
+        return request.build_absolute_uri(id_card_image)
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

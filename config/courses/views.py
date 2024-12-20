@@ -199,7 +199,7 @@ class CartView(generics.GenericAPIView):
     @swagger_auto_schema(tags=["courses"])
     def get(self, request, *args, **kwargs):
         cart = request.user.cart
-        serializer = self.serializer_class(cart)
+        serializer = self.serializer_class(cart, context={'request': request})
         return Response(serializer.data)
 
 
@@ -211,5 +211,5 @@ class FavoriteView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         likes = request.user.likes.all()
         courses = [like.course for like in likes]
-        serializer = self.serializer_class(courses, many=True)
+        serializer = self.serializer_class(courses, many=True, context={'request': request})
         return Response(serializer.data)

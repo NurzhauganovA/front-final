@@ -124,9 +124,15 @@ class RemoveFromCartSerializer(serializers.Serializer):
 
 
 class CourseCartSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Course
-        fields = ('id', 'title', 'price', 'image')
+        fields = ('id', 'title', 'price', 'image_url')
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        return request.build_absolute_uri(obj.image.url)
 
 
 class CartSerializer(serializers.ModelSerializer):
