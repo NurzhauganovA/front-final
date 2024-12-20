@@ -1,3 +1,4 @@
+from django.core.mail import send_mail
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
@@ -8,13 +9,14 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from config import settings
 from courses.models import Course, CourseChapter, CourseReview, CourseRating, COURSE_CATEGORY, CourseCart, CourseLike, \
     CourseCertificate, SHIPPING_COST, SHIPPING_DELIVERY_TIME, ShippingCertificate, CoursePurchase, SHIPPING_CITIES
 from courses.serializers import CourseSerializer, CourseDetailSerializer, CoureChapterSerializer, \
     CourseReviewSerializer, CourseAddReviewSerializer, CourseAddReviewAndRatingSerializer, CourseCreateSerializer, \
     CreateCourseChapterSerializer, CategorySerializer, AddToCartSerializer, RemoveFromCartSerializer, CartSerializer, \
     FavoriteSerializer, CourseCartSerializer, CreateShippingCertificateSerializer, CartCheckoutSerializer, \
-    ShippingCitySerializer, TotalCostSerializer, CoursePurchaseSerializer
+    ShippingCitySerializer, TotalCostSerializer, CoursePurchaseSerializer, CourseUpdateSerializer
 
 
 class CategoryListView(generics.GenericAPIView):
@@ -83,6 +85,31 @@ class CourseChapterCreateView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'message': 'Глава успешно создана'}, status=201)
+
+
+class CourseUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = CourseUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
+    http_method_names = ['patch']
+
+    def get_object(self):
+        return get_object_or_404(Course, pk=self.kwargs.get('pk'))
+
+    @swagger_auto_schema(tags=["courses"])
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+
+class CourseDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return get_object_or_404(Course, pk=self.kwargs.get('pk'))
+
+    @swagger_auto_schema(tags=["courses"])
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
 
 
 class CourseDetailView(generics.RetrieveAPIView):
@@ -322,6 +349,32 @@ class CartCheckoutView(generics.GenericAPIView):
             shipping_certificate=shipping,
             user=user,
             total_cost=total_cost
+        )
+
+        # send email notification to user
+        subject = 'Purchase confirmation'
+        message = f"""
+Your purchase has been confirmed.
+
+Total cost: {total_cost} KZT.
+Shipping address: {address}, {dict(SHIPPING_CITIES).get(city)}.
+Delivery time: {delivery_time} days.
+
+Courses:
+{''.join([f"{idx}. {course.title} - {course.price} KZT. " for idx, course in enumerate(cart_courses, 1)])}
+
+
+Thank you for your purchase!
+Please, check your email for further details.
+
+Best regards,
+Courses team!
+        """
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[user.email]
         )
 
         user.cart.courses.clear()

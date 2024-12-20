@@ -11,6 +11,8 @@ urlpatterns = [
 
     path('add-course/', CourseCreateView.as_view(), name='add-course'),
     path('add-course-chapter/', CourseChapterCreateView.as_view(), name='add-course-chapter'),
+    path('edit-course/<int:pk>', CourseUpdateView.as_view(), name='edit-course'),
+    path('delete-course/<int:pk>', CourseDeleteView.as_view(), name='delete-course'),
 
     path('add-review-and-rating/', AddReviewAndRatingView.as_view(), name='add-review-and-rating'),
 

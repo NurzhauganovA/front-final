@@ -61,6 +61,12 @@ class CreateCourseChapterSerializer(serializers.ModelSerializer):
         fields = ('course', 'title', 'description')
 
 
+class CourseUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ('title', 'description', 'price', 'category', 'image')
+
+
 class CourseDetailSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source='author.get_full_name', read_only=True)
     category = serializers.CharField(source='get_category_display', read_only=True)
