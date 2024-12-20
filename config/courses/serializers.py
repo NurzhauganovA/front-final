@@ -121,3 +121,25 @@ class AddToCartSerializer(serializers.Serializer):
 
 class RemoveFromCartSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
+
+
+class CourseCartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ('id', 'title', 'price', 'image')
+
+
+class CartSerializer(serializers.ModelSerializer):
+    courses = CourseCartSerializer(many=True)
+
+    class Meta:
+        model = CourseCart
+        fields = ('courses', )
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    courses = CourseCartSerializer(many=True)
+
+    class Meta:
+        model = CourseLike
+        fields = ('courses', )

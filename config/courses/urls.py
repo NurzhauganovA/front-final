@@ -19,4 +19,7 @@ urlpatterns = [
 
     path('remove-from-cart/', RemoveFromCartView.as_view(), name='remove-from-cart'),
     path('remove-from-favorite/', RemoveFromFavoriteView.as_view(), name='remove-from-favorite'),
+
+    path('get-cart/', CartView.as_view(), name='get-cart'),
+    path('get-favorite/', FavoriteView.as_view(), name='get-favorite'),
 ]
