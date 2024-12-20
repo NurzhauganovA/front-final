@@ -2,6 +2,10 @@ from rest_framework import serializers
 from courses.models import *
 
 
+class CategorySerializer(serializers.Serializer):
+    name = serializers.CharField()
+
+
 class CourseAddReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseReview

@@ -7,10 +7,21 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, CourseChapter, CourseReview, CourseRating
+from courses.models import Course, CourseChapter, CourseReview, CourseRating, COURSE_CATEGORY
 from courses.serializers import CourseSerializer, CourseDetailSerializer, CoureChapterSerializer, \
     CourseReviewSerializer, CourseAddReviewSerializer, CourseAddReviewAndRatingSerializer, CourseCreateSerializer, \
-    CreateCourseChapterSerializer
+    CreateCourseChapterSerializer, CategorySerializer
+
+
+class CategoryListView(generics.GenericAPIView):
+    serializer_class = CategorySerializer
+
+    def get_object(self):
+        return dict(COURSE_CATEGORY)
+
+    @swagger_auto_schema(tags=["courses"])
+    def get(self, request, *args, **kwargs):
+        return Response(self.get_object())
 
 
 class CourseListView(generics.ListAPIView):
@@ -18,9 +29,27 @@ class CourseListView(generics.ListAPIView):
     serializer_class = CourseSerializer
     pagination_class = None
 
-    @swagger_auto_schema(tags=["courses"])
+    @swagger_auto_schema(
+        tags=["courses"],
+        manual_parameters=[
+            openapi.Parameter('category', openapi.IN_QUERY, type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('title', openapi.IN_QUERY, type=openapi.TYPE_STRING, required=False),
+        ]
+    )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        queryset = self.queryset.all()
+        category = self.request.query_params.get('category')
+        title = self.request.query_params.get('title')
+
+        if category:
+            queryset = queryset.filter(category=category)
+        if title:
+            queryset = queryset.filter(title__icontains=title)
+
+        return queryset
 
 
 class CourseCreateView(generics.CreateAPIView):
