@@ -119,9 +119,23 @@ class CourseRating(models.Model):
         return f"{self.course.title} - {self.rating}"
 
 
+class CourseCart(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name='Пользователь', related_name='cart')
+    courses = models.ManyToManyField(Course, verbose_name='Курсы', related_name='carts', blank=True)
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзины'
+
+    def __str__(self):
+        return self.user.email
+
+
 class CoursePurchase(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', related_name='purchases')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано', blank=True, null=True)
 
     class Meta:
         ordering = ['id']
@@ -134,7 +148,8 @@ class CoursePurchase(models.Model):
 
 class CourseLike(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано', blank=True, null=True)
 
     class Meta:
         ordering = ['id']

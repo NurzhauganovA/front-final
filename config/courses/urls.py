@@ -13,4 +13,7 @@ urlpatterns = [
     path('add-course-chapter/', CourseChapterCreateView.as_view(), name='add-course-chapter'),
 
     path('add-review-and-rating/', AddReviewAndRatingView.as_view(), name='add-review-and-rating'),
+
+    path('add-to-cart/', AddToCartView.as_view(), name='add-to-cart'),
+    path('add-to-favorite/', AddToFavoriteView.as_view(), name='add-to-favorite'),
 ]

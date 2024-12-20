@@ -7,10 +7,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, CourseChapter, CourseReview, CourseRating, COURSE_CATEGORY
+from courses.models import Course, CourseChapter, CourseReview, CourseRating, COURSE_CATEGORY, CourseCart, CourseLike
 from courses.serializers import CourseSerializer, CourseDetailSerializer, CoureChapterSerializer, \
     CourseReviewSerializer, CourseAddReviewSerializer, CourseAddReviewAndRatingSerializer, CourseCreateSerializer, \
-    CreateCourseChapterSerializer, CategorySerializer
+    CreateCourseChapterSerializer, CategorySerializer, AddToCartSerializer
 
 
 class CategoryListView(generics.GenericAPIView):
@@ -120,3 +120,42 @@ class AddReviewAndRatingView(generics.CreateAPIView):
         CourseRating.objects.create(course=course, user=user, rating=rating)
 
         return Response({'message': 'Отзыв успешно добавлен'})
+
+
+class AddToCartView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AddToCartSerializer
+
+    @swagger_auto_schema(tags=["courses"])
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = request.data.get('course_id')
+
+        if not CourseCart.objects.filter(user=user).exists():
+            CourseCart.objects.create(user=user)
+
+        if course_id in user.cart.courses.values_list('id', flat=True):
+            return Response({'message': 'Курс уже добавлен в корзину'}, status=400)
+
+        course = get_object_or_404(Course, pk=course_id)
+        user.cart.courses.add(course)
+
+        return Response({'message': 'Курс успешно добавлен в корзину'})
+
+
+class AddToFavoriteView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AddToCartSerializer
+
+    @swagger_auto_schema(tags=["courses"])
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = request.data.get('course_id')
+
+        if course_id in user.likes.values_list('id', flat=True):
+            return Response({'message': 'Курс уже добавлен в избранное'}, status=400)
+
+        course = get_object_or_404(Course, pk=course_id)
+        CourseLike.objects.create(user=user, course=course)
+
+        return Response({'message': 'Курс успешно добавлен в избранное'})

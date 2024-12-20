@@ -113,3 +113,7 @@ class CourseAddReviewAndRatingSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'user': {'read_only': True}
         }
+
+
+class AddToCartSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()
