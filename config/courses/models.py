@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from authenticate.models import User
 
@@ -233,6 +234,13 @@ class ShippingCertificate(models.Model):
 
     def get_city(self):
         return dict(SHIPPING_CITIES)[self.city]
+
+    def get_delivery_time(self):
+        current_date = timezone.now()
+        date_elapsed = (current_date - self.created_at).days
+        remaining_days = max(0, self.delivery_time - date_elapsed)
+
+        return remaining_days
 
 
 class CoursePurchase(models.Model):

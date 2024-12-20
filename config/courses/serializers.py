@@ -180,6 +180,7 @@ class ShippingCertificateSerializer(serializers.ModelSerializer):
 class ShippingOrderCertificateSerializer(serializers.ModelSerializer):
     certificates = CourseCertificateSerializer(many=True, read_only=True)
     city = serializers.CharField(source="get_city", read_only=True)
+    delivery_time = serializers.IntegerField(source="get_delivery_time", read_only=True)
 
     class Meta:
         model = ShippingCertificate
