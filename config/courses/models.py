@@ -231,6 +231,9 @@ class ShippingCertificate(models.Model):
     def __str__(self):
         return f"{self.city} - {self.cost}"
 
+    def get_city(self):
+        return dict(SHIPPING_CITIES)[self.city]
+
 
 class CoursePurchase(models.Model):
     shipping_certificate = models.ForeignKey(ShippingCertificate, on_delete=models.CASCADE, verbose_name='Сертификат')

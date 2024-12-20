@@ -171,6 +171,15 @@ class ShippingCertificateSerializer(serializers.ModelSerializer):
         fields = ('id', 'certificates', 'city', 'address', 'cost', 'delivery_time')
 
 
+class ShippingOrderCertificateSerializer(serializers.ModelSerializer):
+    certificates = CourseCertificateSerializer(many=True, read_only=True)
+    city = serializers.CharField(source="get_city", read_only=True)
+
+    class Meta:
+        model = ShippingCertificate
+        fields = ('id', 'certificates', 'city', 'address', 'cost', 'delivery_time')
+
+
 class ShippingCitySerializer(serializers.Serializer):
     key = serializers.CharField()
     name = serializers.CharField()
@@ -186,3 +195,17 @@ class CartCheckoutSerializer(serializers.Serializer):
     city = serializers.ChoiceField(choices=SHIPPING_CITIES)
     address = serializers.CharField()
     total_cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
+
+class CoursePurchaseSerializer(serializers.ModelSerializer):
+    shipping = ShippingOrderCertificateSerializer(source='shipping_certificate', read_only=True)
+    courses = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CoursePurchase
+        fields = ('id', 'total_cost', 'created_at', 'shipping', 'courses')
+
+    def get_courses(self, obj):
+        certificates = obj.shipping_certificate.certificates.all()
+        courses = [certificate.course for certificate in certificates]
+        return CourseCartSerializer(courses, many=True, context=self.context).data

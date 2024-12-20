@@ -14,7 +14,7 @@ from courses.serializers import CourseSerializer, CourseDetailSerializer, CoureC
     CourseReviewSerializer, CourseAddReviewSerializer, CourseAddReviewAndRatingSerializer, CourseCreateSerializer, \
     CreateCourseChapterSerializer, CategorySerializer, AddToCartSerializer, RemoveFromCartSerializer, CartSerializer, \
     FavoriteSerializer, CourseCartSerializer, CreateShippingCertificateSerializer, CartCheckoutSerializer, \
-    ShippingCitySerializer, TotalCostSerializer
+    ShippingCitySerializer, TotalCostSerializer, CoursePurchaseSerializer
 
 
 class CategoryListView(generics.GenericAPIView):
@@ -327,3 +327,17 @@ class CartCheckoutView(generics.GenericAPIView):
         user.cart.courses.clear()
 
         return Response({'message': 'Покупка успешно оформлена'})
+
+
+class OrderListView(generics.ListAPIView):
+    serializer_class = CoursePurchaseSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return CoursePurchase.objects.filter(user=self.request.user)
+
+    @swagger_auto_schema(tags=["courses"])
+    def get(self, request, *args, **kwargs):
+        serializer = self.serializer_class(self.get_queryset(), many=True, context={'request': request})
+
+        return Response(serializer.data)

@@ -26,4 +26,6 @@ urlpatterns = [
     path('get-cities/', CityListView.as_view(), name='get-cities'),
     path('get-total-cost/<str:name_city>', TotalCostView.as_view(), name='get-total-cost'),
     path('checkout/', CartCheckoutView.as_view(), name='checkout'),
+
+    path('get-orders/', OrderListView.as_view(), name='get-orders'),
 ]
