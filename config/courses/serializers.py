@@ -117,3 +117,7 @@ class CourseAddReviewAndRatingSerializer(serializers.ModelSerializer):
 
 class AddToCartSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
+
+
+class RemoveFromCartSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()

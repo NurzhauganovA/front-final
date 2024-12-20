@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from courses.models import Course, CourseChapter, CourseReview, CourseRating, COURSE_CATEGORY, CourseCart, CourseLike
 from courses.serializers import CourseSerializer, CourseDetailSerializer, CoureChapterSerializer, \
     CourseReviewSerializer, CourseAddReviewSerializer, CourseAddReviewAndRatingSerializer, CourseCreateSerializer, \
-    CreateCourseChapterSerializer, CategorySerializer, AddToCartSerializer
+    CreateCourseChapterSerializer, CategorySerializer, AddToCartSerializer, RemoveFromCartSerializer
 
 
 class CategoryListView(generics.GenericAPIView):
@@ -159,3 +159,33 @@ class AddToFavoriteView(generics.GenericAPIView):
         CourseLike.objects.create(user=user, course=course)
 
         return Response({'message': 'Курс успешно добавлен в избранное'})
+
+
+class RemoveFromCartView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RemoveFromCartSerializer
+
+    @swagger_auto_schema(tags=["courses"])
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = request.data.get('course_id')
+
+        course = get_object_or_404(Course, pk=course_id)
+        user.cart.courses.remove(course)
+
+        return Response({'message': 'Курс успешно удален из корзины'})
+
+
+class RemoveFromFavoriteView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RemoveFromCartSerializer
+
+    @swagger_auto_schema(tags=["courses"])
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = request.data.get('course_id')
+
+        course = get_object_or_404(Course, pk=course_id)
+        CourseLike.objects.filter(user=user, course=course).delete()
+
+        return Response({'message': 'Курс успешно удален из избранного'})
