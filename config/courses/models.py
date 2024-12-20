@@ -13,6 +13,58 @@ COURSE_CATEGORY = (
     ('Game development', 'Game Development')
 )
 
+SHIPPING_CITIES = (
+    ('almaty', 'Алматы'),
+    ('astana', 'Астана'),
+    ('shymkent', 'Шымкент'),
+    ('karaganda', 'Караганда'),
+    ('aktobe', 'Актобе'),
+    ('pavlodar', 'Павлодар'),
+    ('semey', 'Семей'),
+    ('atyrau', 'Атырау'),
+    ('uralsk', 'Уральск'),
+    ('kostanay', 'Костанай'),
+    ('kokshetau', 'Кокшетау'),
+    ('taraz', 'Тараз'),
+    ('kyzylorda', 'Кызылорда'),
+    ('aktau', 'Актау'),
+)
+
+
+SHIPPING_COST = {
+    'almaty': 2000,
+    'astana': 3500,
+    'shymkent': 2200,
+    'karaganda': 2300,
+    'aktobe': 2400,
+    'pavlodar': 2300,
+    'semey': 2400,
+    'atyrau': 2600,
+    'uralsk': 2500,
+    'kostanay': 2100,
+    'kokshetau': 2150,
+    'taraz': 2050,
+    'kyzylorda': 2250,
+    'aktau': 2450,
+}
+
+SHIPPING_DELIVERY_TIME = {
+    'almaty': 1,
+    'astana': 3,
+    'shymkent': 2,
+    'karaganda': 3,
+    'aktobe': 5,
+    'pavlodar': 5,
+    'semey': 4,
+    'atyrau': 5,
+    'uralsk': 6,
+    'kostanay': 3,
+    'kokshetau': 3,
+    'taraz': 2,
+    'kyzylorda': 2,
+    'aktau': 7,
+}
+
 
 class Course(models.Model):
     title = models.CharField(max_length=150, verbose_name='Название курса')
@@ -132,20 +184,6 @@ class CourseCart(models.Model):
         return self.user.email
 
 
-class CoursePurchase(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', related_name='purchases')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано', blank=True, null=True)
-
-    class Meta:
-        ordering = ['id']
-        verbose_name = 'Покупка курса'
-        verbose_name_plural = 'Покупки курсов'
-
-    def __str__(self):
-        return self.course.title
-
-
 class CourseLike(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс')
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', related_name='likes')
@@ -158,3 +196,52 @@ class CourseLike(models.Model):
 
     def __str__(self):
         return self.course.title
+
+
+class CourseCertificate(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', related_name='certificates')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс')
+    certificate_number = models.CharField(max_length=150, verbose_name='Номер сертификата')
+    certificate_image = models.FileField(upload_to='uploads/certificates/', verbose_name='Изображение сертификата')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+    is_shipping = models.BooleanField(default=False, verbose_name='Доставлено')
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'Сертификат'
+        verbose_name_plural = 'Сертификаты'
+
+    def __str__(self):
+        return f"{self.user.email} - {self.course.title} - {self.certificate_number}"
+
+
+class ShippingCertificate(models.Model):
+    certificates = models.ManyToManyField(CourseCertificate, verbose_name='Сертификаты', related_name='shipping_certificates')
+    city = models.CharField(max_length=150, verbose_name='Город', choices=SHIPPING_CITIES)
+    address = models.TextField(verbose_name='Адрес доставки')
+    cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Стоимость доставки')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+    delivery_time = models.PositiveIntegerField(verbose_name='Время доставки')
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'Доставка сертификата'
+        verbose_name_plural = 'Доставки сертификатов'
+
+    def __str__(self):
+        return f"{self.city} - {self.cost}"
+
+
+class CoursePurchase(models.Model):
+    shipping_certificate = models.ForeignKey(ShippingCertificate, on_delete=models.CASCADE, verbose_name='Сертификат')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', related_name='purchases')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано', blank=True, null=True)
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Общая стоимость')
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'Покупка курса'
+        verbose_name_plural = 'Покупки курсов'
+
+    def __str__(self):
+        return f"{self.user.email} - {self.total_cost}"

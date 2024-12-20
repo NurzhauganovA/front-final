@@ -22,4 +22,8 @@ urlpatterns = [
 
     path('get-cart/', CartView.as_view(), name='get-cart'),
     path('get-favorite/', FavoriteView.as_view(), name='get-favorite'),
+
+    path('get-cities/', CityListView.as_view(), name='get-cities'),
+    path('get-total-cost/<str:name_city>', TotalCostView.as_view(), name='get-total-cost'),
+    path('checkout/', CartCheckoutView.as_view(), name='checkout'),
 ]

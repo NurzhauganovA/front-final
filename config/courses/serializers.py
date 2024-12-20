@@ -149,3 +149,40 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseLike
         fields = ('courses', )
+
+
+class CreateShippingCertificateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShippingCertificate
+        fields = '__all__'
+
+
+class CourseCertificateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseCertificate
+        fields = ('id', 'certificate_number', 'certificate_image', 'is_shipping')
+
+
+class ShippingCertificateSerializer(serializers.ModelSerializer):
+    certificates = CourseCertificateSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ShippingCertificate
+        fields = ('id', 'certificates', 'city', 'address', 'cost', 'delivery_time')
+
+
+class ShippingCitySerializer(serializers.Serializer):
+    key = serializers.CharField()
+    name = serializers.CharField()
+    cost = serializers.IntegerField()
+    delivery_time = serializers.IntegerField()
+
+
+class TotalCostSerializer(serializers.Serializer):
+    city = serializers.ChoiceField(choices=SHIPPING_CITIES)
+
+
+class CartCheckoutSerializer(serializers.Serializer):
+    city = serializers.ChoiceField(choices=SHIPPING_CITIES)
+    address = serializers.CharField()
+    total_cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)

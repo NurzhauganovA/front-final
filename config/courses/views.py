@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -7,11 +8,13 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course, CourseChapter, CourseReview, CourseRating, COURSE_CATEGORY, CourseCart, CourseLike
+from courses.models import Course, CourseChapter, CourseReview, CourseRating, COURSE_CATEGORY, CourseCart, CourseLike, \
+    CourseCertificate, SHIPPING_COST, SHIPPING_DELIVERY_TIME, ShippingCertificate, CoursePurchase, SHIPPING_CITIES
 from courses.serializers import CourseSerializer, CourseDetailSerializer, CoureChapterSerializer, \
     CourseReviewSerializer, CourseAddReviewSerializer, CourseAddReviewAndRatingSerializer, CourseCreateSerializer, \
     CreateCourseChapterSerializer, CategorySerializer, AddToCartSerializer, RemoveFromCartSerializer, CartSerializer, \
-    FavoriteSerializer, CourseCartSerializer
+    FavoriteSerializer, CourseCartSerializer, CreateShippingCertificateSerializer, CartCheckoutSerializer, \
+    ShippingCitySerializer, TotalCostSerializer
 
 
 class CategoryListView(generics.GenericAPIView):
@@ -198,7 +201,11 @@ class CartView(generics.GenericAPIView):
 
     @swagger_auto_schema(tags=["courses"])
     def get(self, request, *args, **kwargs):
-        cart = request.user.cart
+        try:
+            cart = request.user.cart
+        except:
+            cart = CourseCart.objects.create(user=request.user)
+
         serializer = self.serializer_class(cart, context={'request': request})
         return Response(serializer.data)
 
@@ -213,3 +220,110 @@ class FavoriteView(generics.GenericAPIView):
         courses = [like.course for like in likes]
         serializer = self.serializer_class(courses, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+class ShippingCertificatesView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CreateShippingCertificateSerializer
+
+    @swagger_auto_schema(tags=["courses"])
+    def post(self, request, *args, **kwargs):
+        return Response({'message': 'Сертификат успешно создан'})
+
+
+class CityListView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ShippingCitySerializer
+
+    @swagger_auto_schema(tags=["courses"])
+    def get(self, request, *args, **kwargs):
+        # Формируем список городов
+        city_data = []
+        for key, name in SHIPPING_CITIES:
+            city_data.append({
+                'key': key,
+                'name': name,
+                'cost': SHIPPING_COST.get(key, 0),
+                'delivery_time': SHIPPING_DELIVERY_TIME.get(key, 0),
+            })
+
+        # Сериализуем данные
+        serializer = self.serializer_class(city_data, many=True)
+        return Response(serializer.data)
+
+
+class TotalCostView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TotalCostSerializer
+
+    @swagger_auto_schema(tags=["courses"])
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        cart_courses = user.cart.courses.all()
+        if not cart_courses:
+            return Response({'message': 'Корзина пуста'}, status=400)
+
+        city = kwargs.get('name_city')
+        shipping_city = dict(SHIPPING_CITIES).get(city)
+
+        if not shipping_city:
+            return Response({'message': 'Город не найден'}, status=400)
+
+        delivery_cost = SHIPPING_COST.get(city, 0)
+        total_courses_cost = sum(course.price for course in cart_courses)
+        total_cost = total_courses_cost + delivery_cost
+
+        return Response({'total_cost': total_cost})
+
+
+class CartCheckoutView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CartCheckoutSerializer
+
+    @transaction.atomic
+    @swagger_auto_schema(tags=["courses"])
+    def post(self, request, *args, **kwargs):
+        user = request.user
+
+        cart_courses = user.cart.courses.all()
+        if not cart_courses:
+            return Response({'message': 'Корзина пуста'}, status=400)
+
+        certificates = []
+        for course in cart_courses:
+            certificate = CourseCertificate.objects.create(
+                user=user,
+                course=course,
+                certificate_number=f"CERT-{user.id}-{course.id}"
+            )
+            certificates.append(certificate)
+
+        city = request.data.get('city')
+        address = request.data.get('address')
+
+        if not city or not address:
+            return Response({'message': 'Город и адрес доставки обязательны'}, status=400)
+
+        delivery_cost = SHIPPING_COST.get(city, 0)
+        delivery_time = SHIPPING_DELIVERY_TIME.get(city, 0)
+
+        shipping = ShippingCertificate.objects.create(
+            city=city,
+            address=address,
+            cost=delivery_cost,
+            delivery_time=delivery_time
+        )
+        shipping.certificates.set(certificates)
+
+        total_courses_cost = sum(course.price for course in cart_courses)
+        total_cost = total_courses_cost + delivery_cost
+
+        purchase = CoursePurchase.objects.create(
+            shipping_certificate=shipping,
+            user=user,
+            total_cost=total_cost
+        )
+
+        user.cart.courses.clear()
+
+        return Response({'message': 'Покупка успешно оформлена'})
