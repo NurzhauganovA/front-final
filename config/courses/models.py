@@ -64,15 +64,17 @@ class CourseChapter(models.Model):
         verbose_name_plural = 'Главы курсов'
 
     def __str__(self):
-        return self.title
+        return f"{self.course.title} - {self.title}"
+
+    def get_count_lessons(self):
+        return self.lessons.count()
 
 
 class CourseLesson(models.Model):
-    chapter = models.ForeignKey(CourseChapter, on_delete=models.CASCADE, verbose_name='Глава')
+    chapter = models.ForeignKey(CourseChapter, on_delete=models.CASCADE, verbose_name='Глава', related_name='lessons')
     title = models.CharField(max_length=150, verbose_name='Название урока')
     description = models.TextField(verbose_name='Описание урока')
     video_url = models.URLField(verbose_name='Ссылка на видео')
-    is_completed = models.BooleanField(default=False, verbose_name='Завершено')
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
@@ -88,7 +90,7 @@ class CourseLesson(models.Model):
 
 class CourseReview(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс', related_name='reviews')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', related_name='reviews')
     text = models.TextField(verbose_name='Отзыв')
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
