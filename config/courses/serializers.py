@@ -42,6 +42,21 @@ class CourseSerializer(serializers.ModelSerializer):
         return obj.get_average_rating()
 
 
+class CourseCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ('title', 'description', 'price', 'category', 'author', 'image')
+        extra_kwargs = {
+            'author': {'read_only': True}
+        }
+
+
+class CreateCourseChapterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseChapter
+        fields = ('course', 'title', 'description')
+
+
 class CourseDetailSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source='author.get_full_name', read_only=True)
     category = serializers.CharField(source='get_category_display', read_only=True)

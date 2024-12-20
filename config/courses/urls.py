@@ -7,5 +7,8 @@ urlpatterns = [
     path('get-course-detail/<int:pk>/', CourseDetailView.as_view(), name='get-course-detail'),
     path('get-chapter-lessons/<int:pk>/', ChapterLessonsView.as_view(), name='get-chapter-lessons'),
 
+    path('add-course/', CourseCreateView.as_view(), name='add-course'),
+    path('add-course-chapter/', CourseChapterCreateView.as_view(), name='add-course-chapter'),
+
     path('add-review-and-rating/', AddReviewAndRatingView.as_view(), name='add-review-and-rating'),
 ]
